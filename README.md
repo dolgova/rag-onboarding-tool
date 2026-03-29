@@ -97,7 +97,7 @@ See [STATUS.md](./STATUS.md) for current session progress.
 
 I built this to solve a real problem I've encountered repeatedly: senior engineers in compliance-heavy environments spend disproportionate time hunting for institutional knowledge that *exists* but isn't accessible. This tool applies RAG architecture — a proven pattern in enterprise AI — to the specific context of infrastructure and DevOps onboarding.
 
-It also demonstrates practical competency across the full modern AI stack: document pipelines, vector search, LLM orchestration, and secure cloud deployment — applied to the kind of environment Keeper Security operates in.
+It also demonstrates practical competency across the full modern AI stack: document pipelines, vector search, LLM orchestration, and secure cloud deployment — applied to the kind of environment KS operates in.
 
 ---
 
