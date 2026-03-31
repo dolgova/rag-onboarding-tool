@@ -1,127 +1,132 @@
-# SESSION_GUIDE.md — Working on This Project with AI Assistance
-
-This document is the single most important file for maintaining momentum on this project. Read it before every session.
+# SESSION_GUIDE.md — Project Working Protocol
 
 ---
 
-## The Core Problem
+## North Star
 
-Long AI conversations degrade in three ways:
-1. **Context drift** — the model loses track of earlier decisions and starts re-litigating them
-2. **Token bloat** — re-explaining context wastes tokens and slows responses
-3. **Scope creep** — long conversations invite tangents that pull you away from the current objective
+> This project builds a tool that ingests organizational documents and answers
+> natural language questions about them, grounded only in those documents,
+> deployed securely within a GCP cloud perimeter.
 
-This guide solves all three with one discipline: **treat every session as a focused contract with a defined deliverable.**
+If you're unsure whether a session's work belongs here, check against this sentence.
 
 ---
 
-## Session Protocol
+## Session Starter Block
 
-### Before Starting a New Session
-
-1. Open `STATUS.md` and read the current state
-2. Decide on **one specific deliverable** for this session (not a topic — a deliverable)
-3. Copy the **Session Starter Block** below, fill it in, paste it as your first message
-
-### Session Starter Block
+Save this. Paste it at the top of every new conversation.
+Update phase and locked decisions from STATUS.md before pasting.
 
 ```
 ## Session Context
 
-**Project**: RAG Onboarding Tool (github.com/dolgova/rag-onboarding-tool)
-**Goal**: Private AI knowledge system using RAG for DevOps role onboarding
+**Project**: rag-onboarding-tool (github.com/dolgova/rag-onboarding-tool)
+**Goal**: Private RAG system for DevOps role onboarding using organizational documents
 
 **Current phase**: [copy from STATUS.md]
-**Decisions locked in**: [copy the "Locked Decisions" section from STATUS.md]
+**Locked decisions**: [copy the Locked Decisions table from STATUS.md]
 
-**This session's deliverable**: [ONE specific thing — e.g., "working ingestion script that chunks a markdown file and stores embeddings in pgvector"]
+**This session's deliverable**: [ONE specific, shippable output]
 
-**Do not**: [anything explicitly out of scope for this session]
+**Out of scope this session**: [anything explicitly off-limits]
 ```
-
-Paste this at the start of every new conversation. It takes 60 seconds and saves 20 minutes of re-alignment.
 
 ---
 
-## What Belongs in Each Session
+## Before Starting a Session
 
-Keep sessions **narrow and output-oriented**. Good session scopes:
+1. Open `STATUS.md` — read current phase and last session entry
+2. Decide on one specific deliverable (not a topic — a deliverable)
+3. Fill in the Session Starter Block
+4. Paste it as your first message in the new conversation
+
+---
+
+## Session Scope Rules
 
 | ✅ Good scope | ❌ Too broad |
 |---|---|
-| "Write the chunking module with tests" | "Build the ingestion pipeline" |
-| "Terraform for pgvector on Azure" | "Set up the Azure infrastructure" |
-| "Design the /query API contract" | "Work on the API" |
-| "Benchmark chunk sizes 256 vs 512 vs 1024" | "Improve retrieval quality" |
-
-If a session runs long and you haven't hit the deliverable, **stop and update STATUS.md** before closing. Never carry unresolved work across sessions silently.
+| Deploy to GCP VM, validate `/health` returns 200 | "Set up the GCP environment" |
+| `ingestion/obsidian_preprocessor.py` with frontmatter parsing | "Add Obsidian support" |
+| `infra/terraform/modules/cloudsql/` — pgvector on Cloud SQL | "Set up the database" |
+| Run 10-query eval, produce `docs/eval/phase1_eval.md` | "Evaluate the pipeline" |
+| `query/reranker.py` — Cohere Rerank with fallback | "Improve retrieval" |
 
 ---
 
 ## After Each Session
 
-Update `STATUS.md` with:
-- What was built / decided
-- Any new locked decisions
-- Blockers encountered
-- The next session's recommended deliverable
+Say: "Close this session and generate the STATUS.md update."
+Paste the output into STATUS.md. Update the Session Starter Block.
 
-This takes 5 minutes and is the entire system. Without it, the next session starts from zero.
+---
+
+## Environment Prerequisites
+
+Before any session that touches a running stack:
+
+- GCP VM running (`make ssh NAME=rag-dev`)
+- Docker stack up (`make up` on the VM)
+- `/health` returning 200 (`make health`)
+- For Phase 2+ sessions: `gcloud auth login` and correct project set
+
+For test-only sessions (no live stack needed):
+- Python virtualenv active: `source .venv/bin/activate`
+- `pytest tests/` — mocked backends, no services required
+
+---
+
+## Makefile Reference
+
+```bash
+make up                                    # start stack
+make down                                  # stop stack
+make health                                # check API
+make logs                                  # tail all services
+make ingest FILE=doc.md CATEGORY=runbook  # ingest a document
+make query Q="your question here"          # run a query
+make test                                  # run all tests
+make vm NAME=rag-dev ZONE=us-central1-a   # create GCP VM
+make ssh NAME=rag-dev                      # SSH to VM
+make firewall                              # open port 8080
+```
 
 ---
 
 ## Token Efficiency Rules
 
-1. **Don't re-paste code that already exists in the repo** — reference the file path instead
-2. **Don't ask open-ended questions** — the more specific your prompt, the less the model has to explore
-3. **Use the Session Starter Block** — it compresses full context into ~100 tokens
-4. **One file or module per session** — avoid multi-file generation in one prompt; it produces worse output and costs more tokens
-5. **If you get a long answer you didn't need** — add "Be concise. Output only code + brief inline comments" to your next prompt
+1. Reference existing files by path — never re-paste code that's in the repo
+2. Use the Session Starter Block — it replaces full prose re-explanation
+3. One file per generation — sequential output is better quality than multi-file dumps
+4. Add `"Output only code + inline comments"` to prompts when explanation isn't needed
+5. Locked decisions are locked — they're not re-opened in new conversations
 
 ---
 
-## Project North Star
-
-If you ever feel uncertain about whether a session's work belongs in this project, check against this:
-
-> **This project builds a tool that ingests organizational documents and answers natural language questions about them, grounded only in those documents, deployed securely within a cloud perimeter.**
-
-If the work doesn't serve that sentence, it's out of scope.
-
----
-
-## Suggested Session Sequence
+## Remaining Session Sequence
 
 ```
-Phase 1 — Local prototype (Ollama + ChromaDB)
-  Session 1: ingestion/chunker.py — load MD file, chunk, store in ChromaDB
-  Session 2: query/retriever.py — embed question, similarity search, return chunks
-  Session 3: query/prompt.py — assemble context + prompt, call Ollama, return answer
-  Session 4: api/main.py — wrap sessions 1-3 in FastAPI /ingest and /query endpoints
-  Session 5: docker-compose.yml — containerize the full local stack
-  Session 6: end-to-end test — ingest 3 real docs, run 10 test queries, evaluate quality
+Phase 1 — Local Prototype (GCP)
+  ✅ Session 1: Full scaffold
+  Session 2: GCP VM deploy + first live query [NEXT]
+  Session 3: pytest gate on GCP VM
+  Session 4: Phase 1 eval — 10 queries, Pixel gate ≥ 3.5/5
 
-Phase 2 — Azure deployment
-  Session 7: swap ChromaDB → pgvector
-  Session 8: swap Ollama → Azure OpenAI
-  Session 9: Terraform for Azure Container Apps + PostgreSQL
-  Session 10: Azure AD auth on the API
-  Session 11: audit logging to Azure Monitor
+Phase 2 — GCP Production
+  Track A: ingestion/store.py abstraction → OpenAI swap → pgvector swap
+  Track B: Terraform cloudsql → cloudrun → secrets modules
+  Track C: Path traversal fix → JWT auth → RBAC → Cloud Logging
+  (See BUILDPLAN.md for full session breakdown — Sessions 5-14)
 
-Phase 3 — Quality & compliance
-  Session 12: reranker integration
-  Session 13: confidence scoring
-  Session 14: access control per document category
-  Session 15: source citation formatting in responses
+Phase 3 — Quality & Obsidian
+  Session 15: query/reranker.py
+  Session 16: Chunk size benchmark
+  Session 17: ingestion/obsidian_preprocessor.py
+  Session 18: query/graph_retriever.py
+  Session 19: Obsidian MCP integration
+  Session 20: Phase 3 eval — 20 queries, Pixel gate ≥ 4/5
+
+Phase 4 — Hardening
+  Sessions 21-25: Monitoring, load test, DR runbook, SSP docs, final security review
+  (See BUILDPLAN.md)
 ```
-
----
-
-## File Ownership
-
-| File | Purpose | Updated when |
-|---|---|---|
-| `README.md` | Hiring manager-facing overview | Phase milestones only |
-| `ARCHITECTURE.md` | Technical design | When a design decision changes |
-| `STATUS.md` | Living progress tracker | After every session |
-| `SESSION_GUIDE.md` | This file — working protocol | Only if the protocol changes |
